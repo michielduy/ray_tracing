@@ -1,1 +1,3 @@
-# ray_tracing
+# Ray Tracing In A Weekend
+
+  ## First C++ projec
