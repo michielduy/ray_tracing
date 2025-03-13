@@ -1,7 +1,9 @@
 @echo off
 PUSHD %~dp0
-start /b /w g++ -o out/main.exe src/main.cpp
-cd out
-start /b /w main.exe > rendered.ppm
-cd %~dp0
-popd
+START /b /w "" g++ -o out/main.exe src/main.cpp lib/toojpeg.cpp
+CD out
+IF EXIST "main.exe" (
+  START /b /w main.exe
+)
+CD %~dp0
+POPD

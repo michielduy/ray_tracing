@@ -1,6 +1,9 @@
+#include "../lib/toojpeg.h"
 #include "colour.h"
 #include "ray.h"
 #include "vec3.h"
+#include <fstream>
+#include <ios>
 #include <iostream>
 
 colour ray_colour(const ray &r) {
@@ -9,14 +12,38 @@ colour ray_colour(const ray &r) {
   return (1.0 - a) * colour(1.0, 1.0, 1.0) + a * colour(0.5, 0.7, 1.0);
 }
 
+std::ofstream myFile("rendered.jpeg",
+                     std::ios_base::out | std::ios_base::binary);
+void myOutput(unsigned char byte) { myFile << byte; }
+
+void fill_image_buffer(unsigned char *image, int width_ratio, int height_ratio,
+                       int offset, bool test) {
+  if (test) {
+    // testing with gradient
+    image[offset] = width_ratio;
+    image[offset + 1] = height_ratio;
+    image[offset + 2] = 127;
+  }
+}
+void fill_image_buffer(unsigned char *image, const ray &r, int offset) {
+  colour pixel_colour = ray_colour(r);
+  // testing with ray colours
+  image[offset] = 255 * pixel_colour[0];
+  image[offset + 1] = 255 * pixel_colour[1];
+  image[offset + 2] = 255 * pixel_colour[2];
+}
+
 int main() {
   // IMAGE
-
-  constexpr int IMAGE_WIDTH = 400;
+  constexpr int IMAGE_WIDTH = 3840;
   constexpr double ASPECT_RATIO = 16.0 / 9.0;
+  constexpr int BYTES_PER_PIXEL = 3;
+  constexpr bool TEST = true;
 
   int IMAGE_HEIGHT = int(IMAGE_WIDTH / ASPECT_RATIO);
   IMAGE_HEIGHT = (IMAGE_HEIGHT < 1) ? 1 : IMAGE_HEIGHT;
+  unsigned char *image =
+      new unsigned char[IMAGE_WIDTH * IMAGE_HEIGHT * BYTES_PER_PIXEL];
 
   // CAMERA
   constexpr double focal_length = 1.0;
@@ -40,9 +67,6 @@ int main() {
       viewport_upper_left + 0.5 * (pixel_delta_u + pixel_delta_v);
 
   // RENDER
-
-  std::cout << "P3\n" << IMAGE_WIDTH << ' ' << IMAGE_HEIGHT << "\n255\n";
-
   for (int j = 0; j < IMAGE_HEIGHT; j++) {
     std::clog << "\rScanlines remaining: " << (IMAGE_HEIGHT - j) << " "
               << std::flush;
@@ -52,10 +76,28 @@ int main() {
       vec3 ray_direction = pixel_center - camera_center;
 
       ray r(camera_center, ray_direction);
-      colour pixel_colour = ray_colour(r);
-      write_colour(std::cout, pixel_colour);
+      int offset = (j * IMAGE_WIDTH + i) * BYTES_PER_PIXEL;
+
+      if (!TEST) {
+        fill_image_buffer(image, r, offset);
+      } else {
+        fill_image_buffer(image, 255 * i / IMAGE_WIDTH, 255 * j / IMAGE_HEIGHT,
+                          offset, true);
+      }
     }
   }
   std::clog << "\rDone.     \n";
-  return 0;
+
+  // JPEG WRITING
+  std::clog << "\rWriting JPEG\n";
+  const bool ISRGB = true; // true = RGB image, else false = grayscale
+  const auto QUALITY = 90; // compression quality: 0 = worst, 100 = best, 80 to
+                           // 90 are most often used
+  const bool DOWNSAMPLE = false; // false = save as YCbCr444 JPEG (better
+                                 // quality), true = YCbCr420 (smaller file)
+  const char *COMMENT = "TooJpeg example image"; // arbitrary JPEG comment
+  auto ok = TooJpeg::writeJpeg(myOutput, image, IMAGE_WIDTH, IMAGE_HEIGHT,
+                               ISRGB, QUALITY, DOWNSAMPLE, COMMENT);
+  delete[] image;
+  return ok ? 1 : 0;
 }
