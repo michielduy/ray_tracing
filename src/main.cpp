@@ -12,22 +12,22 @@ colour ray_colour(const ray &r) {
 int main() {
   // IMAGE
 
-  int IMAGE_WIDTH = 400;
-  double ASPECT_RATIO = 16.0 / 9.0;
+  constexpr int IMAGE_WIDTH = 400;
+  constexpr double ASPECT_RATIO = 16.0 / 9.0;
 
   int IMAGE_HEIGHT = int(IMAGE_WIDTH / ASPECT_RATIO);
   IMAGE_HEIGHT = (IMAGE_HEIGHT < 1) ? 1 : IMAGE_HEIGHT;
 
   // CAMERA
-  double focal_length = 1.0;
-  double viewport_height = 2.0;
+  constexpr double focal_length = 1.0;
+  constexpr double viewport_height = 2.0;
   double viewport_width =
       viewport_height * (double(IMAGE_WIDTH) / IMAGE_HEIGHT);
-  point3 camera_center = point3(0, 0, 0);
+  const point3 camera_center = point3(0, 0, 0);
 
   // CALCULATE vectors accross
-  vec3 viewport_u = vec3(viewport_width, 0, 0);
-  vec3 viewport_v = vec3(0, -viewport_height, 0);
+  const vec3 viewport_u = vec3(viewport_width, 0, 0);
+  const vec3 viewport_v = vec3(0, -viewport_height, 0);
 
   // CALCULATE horizontal and vertical delta from pixel to pixel
   vec3 pixel_delta_u = viewport_u / IMAGE_WIDTH;
